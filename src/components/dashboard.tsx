@@ -73,7 +73,7 @@ export function Dashboard() {
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
+      recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = true;
     }
   }, []);
@@ -88,53 +88,46 @@ export function Dashboard() {
       });
       return;
     }
+
+    const recognition = recognitionRef.current;
   
-    if (isListening === field) {
-      recognitionRef.current.stop();
+    if (isListening) {
+      recognition.stop();
       setIsListening(null);
-      return;
+      if (isListening === field) {
+        return;
+      }
     }
   
-    if (isListening && isListening !== field) {
-      recognitionRef.current.onend = () => {
-        setIsListening(field);
-        recognitionRef.current?.start();
-      };
-      recognitionRef.current.stop();
-    } else {
-        setIsListening(field);
-        recognitionRef.current.start();
-    }
+    setIsListening(field);
+    recognition.start();
+
+    let finalTranscript = form.getValues(field) || '';
   
-    recognitionRef.current.onresult = (event) => {
-      let finalTranscript = '';
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
         }
       }
-      if (finalTranscript) {
-        const currentVal = form.getValues(field) || '';
-        form.setValue(field, `${currentVal}${currentVal ? ' ' : ''}${finalTranscript}`);
-      }
+      form.setValue(field, finalTranscript + (interimTranscript ? (finalTranscript ? ' ' : '') + interimTranscript : ''));
     };
   
-    recognitionRef.current.onend = () => {
-      if (isListening === field) {
-        setIsListening(null);
-      }
+    recognition.onend = () => {
+      setIsListening(null);
     };
   
-    recognitionRef.current.onerror = (event) => {
+    recognition.onerror = (event) => {
       console.error("Speech recognition error", event.error);
       toast({
         variant: "destructive",
         title: "Voice Recognition Error",
         description: `An error occurred: ${event.error}`,
       });
-      if (isListening === field) {
-        setIsListening(null);
-      }
+      setIsListening(null);
     };
   };
 

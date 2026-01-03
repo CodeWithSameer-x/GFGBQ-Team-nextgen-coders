@@ -16,7 +16,7 @@ export async function analyzePatientDataForPatterns(input: AnalyzePatientDataInp
 const analyzePatientDataForPatternsPrompt = ai.definePrompt({
   name: 'analyzePatientDataForPatternsPrompt',
   input: {schema: AnalyzePatientDataInputSchema},
-  output: {schema: AnalyzePatientDataOutputSchema},
+  output: {format: 'json', schema: AnalyzePatientDataOutputSchema},
   prompt: `You are an AI assistant designed to analyze patient data and identify potential disease patterns and anomalies.
 
   Analyze the following patient data:
@@ -31,6 +31,11 @@ const analyzePatientDataForPatternsPrompt = ai.definePrompt({
 
   Identify any relevant disease patterns and highlight any anomalies that may be of concern.
   Please provide a concise summary of your findings.
+  
+  Respond with a valid JSON object that conforms to this Zod schema:
+  '''json
+  {{jsonSchema output}}
+  '''
   `,
 });
 

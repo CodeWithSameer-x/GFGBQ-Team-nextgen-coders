@@ -15,7 +15,7 @@ export async function suggestPotentialTreatmentPathways(input: SuggestPotentialT
 const prompt = ai.definePrompt({
   name: 'suggestPotentialTreatmentPathwaysPrompt',
   input: {schema: SuggestPotentialTreatmentPathwaysInputSchema},
-  output: {schema: SuggestPotentialTreatmentPathwaysOutputSchema},
+  output: {format: 'json', schema: SuggestPotentialTreatmentPathwaysOutputSchema},
   prompt: `You are an expert medical advisor specializing in suggesting treatment pathways.
 
   Based on the diagnosis and patient data provided, suggest potential treatment pathways, including relevant medications and therapies.
@@ -23,7 +23,12 @@ const prompt = ai.definePrompt({
   Diagnosis: {{{diagnosis}}}
   Patient Data: {{{patientData}}}
 
-  Suggest treatment pathways:
+  Suggest treatment pathways.
+  
+  Respond with a valid JSON object that conforms to this Zod schema:
+  '''json
+  {{jsonSchema output}}
+  '''
   `,
 });
 

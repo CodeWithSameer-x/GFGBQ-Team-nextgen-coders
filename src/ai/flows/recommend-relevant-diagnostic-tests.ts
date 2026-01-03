@@ -16,7 +16,7 @@ export async function recommendRelevantDiagnosticTests(input: RecommendRelevantD
 const prompt = ai.definePrompt({
   name: 'recommendRelevantDiagnosticTestsPrompt',
   input: {schema: RecommendRelevantDiagnosticTestsInputSchema},
-  output: {schema: RecommendRelevantDiagnosticTestsOutputSchema},
+  output: {format: 'json', schema: RecommendRelevantDiagnosticTestsOutputSchema},
   prompt: `You are an AI assistant that helps doctors by recommending a prioritized list of relevant diagnostic tests based on the patient's medical history, symptoms, lab results, and potential conditions.
   
   {{#if medicalHistoryFile}}
@@ -28,7 +28,13 @@ const prompt = ai.definePrompt({
   Lab Results: {{{labResults}}}
   Potential Conditions: {{{potentialConditions}}}
 
-  Please provide a prioritized list of relevant diagnostic tests, including the test name, rationale, and priority (1 being highest).`,
+  Please provide a prioritized list of relevant diagnostic tests, including the test name, rationale, and priority (1 being highest).
+  
+  Respond with a valid JSON object that conforms to this Zod schema:
+  '''json
+  {{jsonSchema output}}
+  '''
+  `,
 });
 
 const recommendRelevantDiagnosticTestsFlow = ai.defineFlow(

@@ -18,7 +18,11 @@ const prompt = ai.definePrompt({
   input: {schema: RecommendRelevantDiagnosticTestsInputSchema},
   output: {schema: RecommendRelevantDiagnosticTestsOutputSchema},
   prompt: `You are an AI assistant that helps doctors by recommending a prioritized list of relevant diagnostic tests based on the patient's medical history, symptoms, lab results, and potential conditions.
-
+  
+  {{#if medicalHistoryFile}}
+  Medical History File: {{media url=medicalHistoryFile}}
+  Please extract and consider the medical history from this file.
+  {{/if}}
   Medical History: {{{medicalHistory}}}
   Symptoms: {{{symptoms}}}
   Lab Results: {{{labResults}}}

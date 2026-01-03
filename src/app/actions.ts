@@ -23,15 +23,16 @@ export async function getAiAnalysis(
   data: z.infer<typeof patientDataSchema>,
   question?: string
 ): Promise<FullAnalysis> {
-  const { medicalHistory, symptoms, labResults } = data;
+  const { medicalHistory, symptoms, labResults, medicalHistoryFile } = data;
 
   const [analysis, diagnoses] = await Promise.all([
-    analyzePatientDataForPatterns({ medicalHistory, symptoms, labResults }),
+    analyzePatientDataForPatterns({ medicalHistory, symptoms, labResults, medicalHistoryFile }),
     suggestDifferentialDiagnoses({
       medicalHistory,
       symptoms,
       labResults,
       question,
+      medicalHistoryFile,
     }),
   ]);
 
@@ -50,6 +51,7 @@ export async function getAiAnalysis(
         symptoms,
         labResults,
         potentialConditions,
+        medicalHistoryFile,
       }),
       suggestPotentialTreatmentPathways({
         diagnosis: topDiagnosis.diagnosis,

@@ -20,8 +20,12 @@ const analyzePatientDataForPatternsPrompt = ai.definePrompt({
   prompt: `You are an AI assistant designed to analyze patient data and identify potential disease patterns and anomalies.
 
   Analyze the following patient data:
-
-  Medical History: {{{medicalHistory}}}
+  
+  {{#if medicalHistoryFile}}
+  Medical History File: {{media url=medicalHistoryFile}}
+  Please extract and consider the medical history from this file.
+  {{/if}}
+  Medical History (Text): {{{medicalHistory}}}
   Symptoms: {{{symptoms}}}
   Lab Results: {{{labResults}}}
 

@@ -25,7 +25,11 @@ const prompt = ai.definePrompt({
   For each diagnosis, provide a rationale.
 
   If the information provided is insufficient for a proper diagnosis, ask a clarifying counter-question to get more information. For example, if a patient mentions headaches, you could ask about the frequency, intensity, and location of the headaches. Set this question in the 'aiQuestion' field.
-
+  
+  {{#if medicalHistoryFile}}
+  Medical History File: {{media url=medicalHistoryFile}}
+  Please extract and consider the medical history from this file.
+  {{/if}}
   Medical History: {{{medicalHistory}}}
   Symptoms: {{{symptoms}}}
   LabResults: {{{labResults}}}

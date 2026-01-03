@@ -17,6 +17,8 @@ import {
   Mic,
   Volume2,
   Pause,
+  UploadCloud,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,9 +51,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { patientDataSchema } from "@/lib/schemas";
 import type { FullAnalysis } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type FormData = z.infer<typeof patientDataSchema>;
-type FormFields = keyof FormData;
+type FormFields = keyof Omit<FormData, "medicalHistoryFile">;
 
 type PlayingAudio = {
   section: string;
@@ -67,6 +70,10 @@ export function Dashboard() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingAudio, setPlayingAudio] = useState<PlayingAudio | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [medicalHistoryFile, setMedicalHistoryFile] = useState<File | null>(
+    null
+  );
 
   const form = useForm<FormData>({
     resolver: zodResolver(patientDataSchema),
@@ -161,6 +168,14 @@ export function Dashboard() {
     };
   };
 
+  const toDataURL = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleAnalysis = (
     data: FormData,
     question?: string,
@@ -171,7 +186,13 @@ export function Dashboard() {
         setResults(null);
       }
       try {
-        const analysisResults = await getAiAnalysis(data, question);
+        let submissionData = { ...data };
+        if (medicalHistoryFile) {
+          submissionData.medicalHistoryFile = await toDataURL(
+            medicalHistoryFile
+          );
+        }
+        const analysisResults = await getAiAnalysis(submissionData, question);
         if (reanalyze && results) {
           setResults({
             ...results,
@@ -205,7 +226,7 @@ export function Dashboard() {
     const question = questions[index];
     handleAnalysis(formData, question, true);
   };
-  
+
   const handlePlayAudio = async (text: string, section: string) => {
     if (!audioRef.current) return;
 
@@ -246,6 +267,22 @@ export function Dashboard() {
     }
   };
 
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setMedicalHistoryFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      setMedicalHistoryFile(e.target.files[0]);
+    }
+  };
+
   const isLoading = isPending;
 
   return (
@@ -274,25 +311,76 @@ export function Dashboard() {
                       <FormItem>
                         <FormLabel>Medical History</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Textarea
-                              placeholder="e.g., Patient is a 45-year-old male with a history of hypertension and type 2 diabetes..."
-                              className="min-h-[100px] pr-10"
-                              {...field}
-                            />
-                            <Button
-                              type="button"
-                              variant={
-                                isListening === "medicalHistory"
-                                  ? "destructive"
-                                  : "ghost"
-                              }
-                              size="icon"
-                              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
-                              onClick={() => handleVoiceInput("medicalHistory")}
-                            >
-                              <Mic className="h-4 w-4" />
-                            </Button>
+                          <div
+                            className={cn(
+                              "relative rounded-lg border-2 border-dashed border-border p-4 text-center transition-colors",
+                              dragActive && "border-primary bg-accent"
+                            )}
+                            onDragEnter={() => setDragActive(true)}
+                            onDragLeave={() => setDragActive(false)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={handleFileDrop}
+                          >
+                            {medicalHistoryFile ? (
+                              <div className="flex items-center justify-between text-sm">
+                                <span>{medicalHistoryFile.name}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => setMedicalHistoryFile(null)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <UploadCloud className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  Drag & drop a file here, or{" "}
+                                  <label className="cursor-pointer font-semibold text-primary underline">
+                                    browse
+                                    <Input
+                                      type="file"
+                                      className="sr-only"
+                                      onChange={handleFileSelect}
+                                      accept=".pdf,.doc,.docx,image/*"
+                                    />
+                                  </label>
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  PDF, DOC, DOCX, PNG, JPG accepted
+                                </p>
+                                <div className="my-4 flex items-center gap-2">
+                                  <div className="h-px flex-grow bg-border" />
+                                  <span className="text-xs text-muted-foreground">
+                                    OR
+                                  </span>
+                                  <div className="h-px flex-grow bg-border" />
+                                </div>
+                                <div className="relative">
+                                  <Textarea
+                                    placeholder="Manually enter medical history..."
+                                    className="min-h-[80px] pr-10"
+                                    {...field}
+                                  />
+                                   <Button
+                                    type="button"
+                                    variant={
+                                      isListening === "medicalHistory"
+                                        ? "destructive"
+                                        : "ghost"
+                                    }
+                                    size="icon"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
+                                    onClick={() => handleVoiceInput("medicalHistory")}
+                                  >
+                                    <Mic className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </FormControl>
                         <FormMessage />

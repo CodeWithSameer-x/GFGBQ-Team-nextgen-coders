@@ -1,9 +1,10 @@
 import {z} from 'zod';
 
 export const AnalyzePatientDataInputSchema = z.object({
-    medicalHistory: z.string().describe("The patient's medical history."),
+    medicalHistory: z.string().optional().describe("The patient's medical history."),
     symptoms: z.string().describe("The patient's reported symptoms."),
-    labResults: z.string().describe("The patient's laboratory results."),
+    labResults: z.string().optional().describe("The patient's laboratory results."),
+    medicalHistoryFile: z.string().optional().describe("A medical history file (e.g., PDF, DOCX, image) as a data URI.")
 });
 export type AnalyzePatientDataInput = z.infer<typeof AnalyzePatientDataInputSchema>;
 
@@ -15,10 +16,11 @@ export type AnalyzePatientDataOutput = z.infer<typeof AnalyzePatientDataOutputSc
 
 
 export const RecommendRelevantDiagnosticTestsInputSchema = z.object({
-  medicalHistory: z.string().describe('The patient\'s medical history.'),
+  medicalHistory: z.string().optional().describe('The patient\'s medical history.'),
   symptoms: z.string().describe('The patient\'s reported symptoms.'),
-  labResults: z.string().describe('The patient\'s laboratory results.'),
+  labResults: z.string().optional().describe('The patient\'s laboratory results.'),
   potentialConditions: z.string().describe('The identified potential conditions.'),
+  medicalHistoryFile: z.string().optional().describe("A medical history file (e.g., PDF, DOCX, image) as a data URI.")
 });
 export type RecommendRelevantDiagnosticTestsInput = z.infer<typeof RecommendRelevantDiagnosticTestsInputSchema>;
 
@@ -35,10 +37,11 @@ export type RecommendRelevantDiagnosticTestsOutput = z.infer<typeof RecommendRel
 
 
 export const SuggestDifferentialDiagnosesInputSchema = z.object({
-  medicalHistory: z.string().describe("The patient's medical history."),
+  medicalHistory: z.string().optional().describe("The patient's medical history."),
   symptoms: z.string().describe("The patient's reported symptoms."),
-  labResults: z.string().describe("The patient's laboratory results."),
+  labResults: z.string().optional().describe("The patient's laboratory results."),
   question: z.string().optional().describe("A clarifying question from the user to refine a diagnosis."),
+  medicalHistoryFile: z.string().optional().describe("A medical history file (e.g., PDF, DOCX, image) as a data URI.")
 });
 export type SuggestDifferentialDiagnosesInput =
   z.infer<typeof SuggestDifferentialDiagnosesInputSchema>;

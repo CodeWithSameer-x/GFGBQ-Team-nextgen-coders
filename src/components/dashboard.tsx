@@ -96,11 +96,15 @@ export function Dashboard() {
     }
   
     if (isListening && isListening !== field) {
+      recognitionRef.current.onend = () => {
+        setIsListening(field);
+        recognitionRef.current?.start();
+      };
       recognitionRef.current.stop();
+    } else {
+        setIsListening(field);
+        recognitionRef.current.start();
     }
-  
-    setIsListening(field);
-    recognitionRef.current.start();
   
     recognitionRef.current.onresult = (event) => {
       let finalTranscript = '';

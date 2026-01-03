@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { useTransition, useState, Fragment } from "react";
+import { useTransition, useState, Fragment, useRef, useEffect } from "react";
 
 import { getAiAnalysis } from "@/app/actions";
 import {
@@ -14,6 +14,7 @@ import {
   Loader2,
   Stethoscope,
   RefreshCcw,
+  Mic,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,12 +49,15 @@ import { patientDataSchema } from "@/lib/schemas";
 import type { FullAnalysis } from "@/lib/types";
 
 type FormData = z.infer<typeof patientDataSchema>;
+type FormFields = keyof FormData;
 
 export function Dashboard() {
   const [isPending, startTransition] = useTransition();
   const [results, setResults] = useState<FullAnalysis | null>(null);
   const [questions, setQuestions] = useState<Record<number, string>>({});
   const { toast } = useToast();
+  const [isListening, setIsListening] = useState<FormFields | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(patientDataSchema),
@@ -63,6 +67,72 @@ export function Dashboard() {
       labResults: "",
     },
   });
+
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+    }
+  }, []);
+
+  const handleVoiceInput = (field: FormFields) => {
+    if (!recognitionRef.current) {
+      toast({
+        variant: "destructive",
+        title: "Voice recognition not supported",
+        description:
+          "Your browser does not support voice recognition. Please try a different browser.",
+      });
+      return;
+    }
+  
+    if (isListening === field) {
+      recognitionRef.current.stop();
+      setIsListening(null);
+      return;
+    }
+  
+    if (isListening && isListening !== field) {
+      recognitionRef.current.stop();
+    }
+  
+    setIsListening(field);
+    recognitionRef.current.start();
+  
+    recognitionRef.current.onresult = (event) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        const currentVal = form.getValues(field) || '';
+        form.setValue(field, `${currentVal}${currentVal ? ' ' : ''}${finalTranscript}`);
+      }
+    };
+  
+    recognitionRef.current.onend = () => {
+      if (isListening === field) {
+        setIsListening(null);
+      }
+    };
+  
+    recognitionRef.current.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      toast({
+        variant: "destructive",
+        title: "Voice Recognition Error",
+        description: `An error occurred: ${event.error}`,
+      });
+      if (isListening === field) {
+        setIsListening(null);
+      }
+    };
+  };
 
   const handleAnalysis = (data: FormData, question?: string) => {
     startTransition(async () => {
@@ -124,11 +194,22 @@ export function Dashboard() {
                       <FormItem>
                         <FormLabel>Medical History</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="e.g., Patient is a 45-year-old male with a history of hypertension and type 2 diabetes..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
+                           <div className="relative">
+                            <Textarea
+                              placeholder="e.g., Patient is a 45-year-old male with a history of hypertension and type 2 diabetes..."
+                              className="min-h-[100px] pr-10"
+                              {...field}
+                            />
+                            <Button
+                                type="button"
+                                variant={isListening === 'medicalHistory' ? 'destructive' : 'ghost'}
+                                size="icon"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
+                                onClick={() => handleVoiceInput('medicalHistory')}
+                              >
+                                <Mic className="h-4 w-4" />
+                              </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -141,11 +222,22 @@ export function Dashboard() {
                       <FormItem>
                         <FormLabel>Symptoms</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="e.g., Reports chest pain, shortness of breath, and fatigue for the past 2 weeks..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
+                           <div className="relative">
+                            <Textarea
+                              placeholder="e.g., Reports chest pain, shortness of breath, and fatigue for the past 2 weeks..."
+                              className="min-h-[100px] pr-10"
+                              {...field}
+                            />
+                            <Button
+                                type="button"
+                                variant={isListening === 'symptoms' ? 'destructive' : 'ghost'}
+                                size="icon"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
+                                onClick={() => handleVoiceInput('symptoms')}
+                              >
+                                <Mic className="h-4 w-4" />
+                              </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -158,11 +250,22 @@ export function Dashboard() {
                       <FormItem>
                         <FormLabel>Laboratory Results</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="e.g., ECG shows ST-segment elevation. Troponin levels are elevated..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
+                          <div className="relative">
+                            <Textarea
+                              placeholder="e.g., ECG shows ST-segment elevation. Troponin levels are elevated..."
+                              className="min-h-[100px] pr-10"
+                              {...field}
+                            />
+                            <Button
+                                type="button"
+                                variant={isListening === 'labResults' ? 'destructive' : 'ghost'}
+                                size="icon"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
+                                onClick={() => handleVoiceInput('labResults')}
+                              >
+                                <Mic className="h-4 w-4" />
+                              </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -407,4 +510,11 @@ export function Dashboard() {
       </div>
     </div>
   );
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
 }

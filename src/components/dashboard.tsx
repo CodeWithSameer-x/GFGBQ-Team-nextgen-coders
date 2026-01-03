@@ -121,12 +121,16 @@ export function Dashboard() {
     };
   
     recognition.onerror = (event) => {
-      console.error("Speech recognition error", event.error);
-      toast({
-        variant: "destructive",
-        title: "Voice Recognition Error",
-        description: `An error occurred: ${event.error}`,
-      });
+      if (event.error === 'no-speech') {
+        // This is a common case, so we don't need to show an error.
+      } else {
+        console.error("Speech recognition error", event.error);
+        toast({
+          variant: "destructive",
+          title: "Voice Recognition Error",
+          description: `An error occurred: ${event.error}`,
+        });
+      }
       setIsListening(null);
     };
   };

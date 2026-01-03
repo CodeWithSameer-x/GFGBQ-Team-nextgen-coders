@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -81,8 +82,19 @@ export function Dashboard() {
       medicalHistory: "",
       symptoms: "",
       labResults: "",
+      medicalHistoryFile: undefined,
     },
   });
+
+  useEffect(() => {
+    if (medicalHistoryFile) {
+      form.setValue('medicalHistoryFile', medicalHistoryFile.name);
+      form.trigger('symptoms');
+    } else {
+      form.setValue('medicalHistoryFile', undefined);
+      form.trigger('symptoms');
+    }
+  }, [medicalHistoryFile, form]);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -186,13 +198,16 @@ export function Dashboard() {
         setResults(null);
       }
       try {
-        let submissionData = { ...data };
+        let submissionData: Partial<FormData> & Pick<FormData, 'symptoms'> = { ...data };
         if (medicalHistoryFile) {
           submissionData.medicalHistoryFile = await toDataURL(
             medicalHistoryFile
           );
+        } else {
+          delete submissionData.medicalHistoryFile;
         }
-        const analysisResults = await getAiAnalysis(submissionData, question);
+        
+        const analysisResults = await getAiAnalysis(submissionData as FormData, question);
         if (reanalyze && results) {
           setResults({
             ...results,
@@ -283,6 +298,10 @@ export function Dashboard() {
     }
   };
 
+  const handleRemoveFile = () => {
+    setMedicalHistoryFile(null);
+  }
+
   const isLoading = isPending;
 
   return (
@@ -329,7 +348,7 @@ export function Dashboard() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6"
-                                  onClick={() => setMedicalHistoryFile(null)}
+                                  onClick={handleRemoveFile}
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -810,3 +829,5 @@ declare global {
     webkitSpeechRecognition: typeof SpeechRecognition;
   }
 }
+
+    

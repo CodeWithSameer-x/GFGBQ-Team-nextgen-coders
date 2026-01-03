@@ -122,7 +122,10 @@ export function Dashboard() {
   
     recognition.onerror = (event) => {
       if (event.error === 'no-speech') {
-        // This is a common case, so we don't need to show an error.
+        toast({
+          title: "No speech detected",
+          description: "Microphone has been turned off.",
+        });
       } else {
         console.error("Speech recognition error", event.error);
         toast({

@@ -43,11 +43,13 @@ const prompt = ai.definePrompt({
   Analyze the following patient data and suggest a list of potential diagnoses, ranked by likelihood.
   For each diagnosis, provide a rationale.
 
+  If the information provided is insufficient for a proper diagnosis, ask clarifying questions to get more information. For example, if a patient mentions headaches, you could ask about the frequency, intensity, and location of the headaches.
+
   Medical History: {{{medicalHistory}}}
   Symptoms: {{{symptoms}}}
   LabResults: {{{labResults}}}
   {{#if question}}
-  When refining your diagnosis, consider the following question: {{{question}}}
+  When refining your diagnosis, consider the following question: {{{question}}}. Do not change the original diagnosis, but provide a more detailed rationale based on the question.
   {{/if}}
 
   Format your response as a JSON array of objects with the following fields:

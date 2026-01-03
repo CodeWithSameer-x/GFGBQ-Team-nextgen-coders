@@ -1,7 +1,4 @@
-import type { AnalyzePatientDataOutput } from "@/ai/flows/analyze-patient-data-for-patterns";
-import type { RecommendRelevantDiagnosticTestsOutput } from "@/ai/flows/recommend-relevant-diagnostic-tests";
-import type { SuggestDifferentialDiagnosesOutput } from "@/ai/flows/suggest-differential-diagnoses";
-import type { SuggestPotentialTreatmentPathwaysOutput } from "@/ai/flows/suggest-potential-treatment-pathways";
+import type { AnalyzePatientDataOutput, RecommendRelevantDiagnosticTestsOutput, SuggestDifferentialDiagnosesOutput, SuggestPotentialTreatmentPathwaysOutput } from "./schemas/ai-schemas";
 
 export type FullAnalysis = {
   analysis: AnalyzePatientDataOutput;

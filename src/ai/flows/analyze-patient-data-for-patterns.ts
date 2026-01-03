@@ -3,25 +3,11 @@
  * @fileOverview Analyzes patient data to identify potential disease patterns and anomalies.
  *
  * - analyzePatientDataForPatterns - A function that handles the analysis of patient data.
- * - AnalyzePatientDataInput - The input type for the analyzePatientDataForPatterns function.
- * - AnalyzePatientDataOutput - The return type for the analyzePatientDataForPatterns function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { type AnalyzePatientDataInput, AnalyzePatientDataInputSchema, type AnalyzePatientDataOutput, AnalyzePatientDataOutputSchema } from '@/lib/schemas/ai-schemas';
 
-const AnalyzePatientDataInputSchema = z.object({
-  medicalHistory: z.string().describe('The patient\'s medical history.'),
-  symptoms: z.string().describe('The patient\'s reported symptoms.'),
-  labResults: z.string().describe('The patient\'s laboratory results.'),
-});
-export type AnalyzePatientDataInput = z.infer<typeof AnalyzePatientDataInputSchema>;
-
-const AnalyzePatientDataOutputSchema = z.object({
-  diseasePatterns: z.string().describe('Identified disease patterns and potential conditions.'),
-  anomalies: z.string().describe('Highlighted anomalies in the patient data.'),
-});
-export type AnalyzePatientDataOutput = z.infer<typeof AnalyzePatientDataOutputSchema>;
 
 export async function analyzePatientDataForPatterns(input: AnalyzePatientDataInput): Promise<AnalyzePatientDataOutput> {
   return analyzePatientDataForPatternsFlow(input);

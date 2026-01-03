@@ -3,21 +3,11 @@
  * @fileOverview Converts text to speech.
  *
  * - textToSpeech - A function that converts text to speech.
- * - TextToSpeechInput - The input type for the textToSpeech function.
- * - TextToSpeechOutput - The return type for the textToSpeech function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { TextToSpeechInputSchema, type TextToSpeechInput, TextToSpeechOutputSchema, type TextToSpeechOutput } from '@/lib/schemas/ai-schemas';
 import wav from 'wav';
-
-export const TextToSpeechInputSchema = z.string();
-export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
-
-export const TextToSpeechOutputSchema = z.object({
-  audio: z.string().describe('The base64 encoded WAV audio data URI.'),
-});
-export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
 
 export async function textToSpeech(
   input: TextToSpeechInput

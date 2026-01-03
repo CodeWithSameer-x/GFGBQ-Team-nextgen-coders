@@ -2,25 +2,22 @@
 "use server";
 
 import {
-  analyzePatientDataForPatterns,
-  type AnalyzePatientDataOutput,
+  analyzePatientDataForPatterns
 } from "@/ai/flows/analyze-patient-data-for-patterns";
 import {
   recommendRelevantDiagnosticTests,
-  type RecommendRelevantDiagnosticTestsOutput,
 } from "@/ai/flows/recommend-relevant-diagnostic-tests";
 import {
   suggestDifferentialDiagnoses,
-  type SuggestDifferentialDiagnosesOutput,
 } from "@/ai/flows/suggest-differential-diagnoses";
 import {
   suggestPotentialTreatmentPathways,
-  type SuggestPotentialTreatmentPathwaysOutput,
 } from "@/ai/flows/suggest-potential-treatment-pathways";
-import { textToSpeech, type TextToSpeechOutput } from "@/ai/flows/tts-flow";
+import { textToSpeech } from "@/ai/flows/tts-flow";
 import { patientDataSchema } from "@/lib/schemas";
 import type { FullAnalysis } from "@/lib/types";
 import type { z } from "zod";
+import type { AnalyzePatientDataOutput, RecommendRelevantDiagnosticTestsOutput, SuggestDifferentialDiagnosesOutput, SuggestPotentialTreatmentPathwaysOutput, TextToSpeechOutput } from "@/lib/schemas/ai-schemas";
 
 export async function getAiAnalysis(
   data: z.infer<typeof patientDataSchema>,

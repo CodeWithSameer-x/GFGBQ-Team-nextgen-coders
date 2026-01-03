@@ -161,12 +161,25 @@ export function Dashboard() {
     };
   };
 
-  const handleAnalysis = (data: FormData, question?: string) => {
+  const handleAnalysis = (
+    data: FormData,
+    question?: string,
+    reanalyze = false
+  ) => {
     startTransition(async () => {
-      setResults(null);
+      if (!reanalyze) {
+        setResults(null);
+      }
       try {
         const analysisResults = await getAiAnalysis(data, question);
-        setResults(analysisResults);
+        if (reanalyze && results) {
+          setResults({
+            ...results,
+            diagnoses: [...results.diagnoses, ...analysisResults.diagnoses],
+          });
+        } else {
+          setResults(analysisResults);
+        }
       } catch (error) {
         console.error("Analysis failed:", error);
         toast({
@@ -190,7 +203,7 @@ export function Dashboard() {
   const handleReanalyze = (index: number) => {
     const formData = form.getValues();
     const question = questions[index];
-    handleAnalysis(formData, question);
+    handleAnalysis(formData, question, true);
   };
   
   const handlePlayAudio = async (text: string, section: string) => {
@@ -521,7 +534,7 @@ export function Dashboard() {
                           <TableCell colSpan={3}>
                             <div className="flex items-center gap-2">
                               <Input
-                                placeholder="Ask a clarifying question..."
+                                placeholder={diag.aiQuestion || "Ask a clarifying question..."}
                                 value={questions[i] || ""}
                                 onChange={(e) =>
                                   handleQuestionChange(i, e.target.value)

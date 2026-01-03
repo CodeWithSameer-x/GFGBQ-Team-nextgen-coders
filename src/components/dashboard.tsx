@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { useTransition, useState, Fragment, useRef, useEffect } from "react";
 
-import { getAiAnalysis } from "@/app/actions";
+import { getAiAnalysis, getTts } from "@/app/actions";
 import {
   BrainCircuit,
   FileText,
@@ -15,6 +15,8 @@ import {
   Stethoscope,
   RefreshCcw,
   Mic,
+  Volume2,
+  Pause,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +53,11 @@ import type { FullAnalysis } from "@/lib/types";
 type FormData = z.infer<typeof patientDataSchema>;
 type FormFields = keyof FormData;
 
+type PlayingAudio = {
+  section: string;
+  isLoading: boolean;
+};
+
 export function Dashboard() {
   const [isPending, startTransition] = useTransition();
   const [results, setResults] = useState<FullAnalysis | null>(null);
@@ -58,6 +65,8 @@ export function Dashboard() {
   const { toast } = useToast();
   const [isListening, setIsListening] = useState<FormFields | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingAudio, setPlayingAudio] = useState<PlayingAudio | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(patientDataSchema),
@@ -76,6 +85,15 @@ export function Dashboard() {
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = true;
     }
+
+    audioRef.current = new Audio();
+    audioRef.current.onended = () => {
+      setPlayingAudio(null);
+    };
+
+    return () => {
+      audioRef.current?.pause();
+    };
   }, []);
 
   const handleVoiceInput = (field: FormFields) => {
@@ -90,7 +108,7 @@ export function Dashboard() {
     }
 
     const recognition = recognitionRef.current;
-  
+
     if (isListening) {
       recognition.stop();
       setIsListening(null);
@@ -98,30 +116,35 @@ export function Dashboard() {
         return;
       }
     }
-  
+
     setIsListening(field);
     recognition.start();
 
-    let finalTranscript = form.getValues(field) || '';
-  
+    let finalTranscript = form.getValues(field) || "";
+
     recognition.onresult = (event) => {
-      let interimTranscript = '';
+      let interimTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
+          finalTranscript +=
+            (finalTranscript ? " " : "") + event.results[i][0].transcript;
         } else {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      form.setValue(field, finalTranscript + (interimTranscript ? (finalTranscript ? ' ' : '') + interimTranscript : ''));
+      form.setValue(
+        field,
+        finalTranscript +
+          (interimTranscript ? (finalTranscript ? " " : "") + interimTranscript : "")
+      );
     };
-  
+
     recognition.onend = () => {
       setIsListening(null);
     };
-  
+
     recognition.onerror = (event) => {
-      if (event.error === 'no-speech') {
+      if (event.error === "no-speech") {
         toast({
           title: "No speech detected",
           description: "Microphone has been turned off.",
@@ -169,6 +192,46 @@ export function Dashboard() {
     const question = questions[index];
     handleAnalysis(formData, question);
   };
+  
+  const handlePlayAudio = async (text: string, section: string) => {
+    if (!audioRef.current) return;
+
+    if (playingAudio?.section === section && !playingAudio.isLoading) {
+      if (audioRef.current.paused) {
+        audioRef.current.play();
+        setPlayingAudio({ section, isLoading: false });
+      } else {
+        audioRef.current.pause();
+        setPlayingAudio(null);
+      }
+      return;
+    }
+
+    if (playingAudio) {
+      audioRef.current.pause();
+    }
+
+    setPlayingAudio({ section, isLoading: true });
+
+    try {
+      const { audio } = await getTts(text);
+      if (audio && audioRef.current) {
+        audioRef.current.src = audio;
+        audioRef.current.play();
+        setPlayingAudio({ section, isLoading: false });
+      } else {
+        setPlayingAudio(null);
+      }
+    } catch (error) {
+      console.error("TTS failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Text-to-Speech Failed",
+        description: "Could not generate audio. Please try again.",
+      });
+      setPlayingAudio(null);
+    }
+  };
 
   const isLoading = isPending;
 
@@ -198,21 +261,25 @@ export function Dashboard() {
                       <FormItem>
                         <FormLabel>Medical History</FormLabel>
                         <FormControl>
-                           <div className="relative">
+                          <div className="relative">
                             <Textarea
                               placeholder="e.g., Patient is a 45-year-old male with a history of hypertension and type 2 diabetes..."
                               className="min-h-[100px] pr-10"
                               {...field}
                             />
                             <Button
-                                type="button"
-                                variant={isListening === 'medicalHistory' ? 'destructive' : 'ghost'}
-                                size="icon"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
-                                onClick={() => handleVoiceInput('medicalHistory')}
-                              >
-                                <Mic className="h-4 w-4" />
-                              </Button>
+                              type="button"
+                              variant={
+                                isListening === "medicalHistory"
+                                  ? "destructive"
+                                  : "ghost"
+                              }
+                              size="icon"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
+                              onClick={() => handleVoiceInput("medicalHistory")}
+                            >
+                              <Mic className="h-4 w-4" />
+                            </Button>
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -226,21 +293,25 @@ export function Dashboard() {
                       <FormItem>
                         <FormLabel>Symptoms</FormLabel>
                         <FormControl>
-                           <div className="relative">
+                          <div className="relative">
                             <Textarea
                               placeholder="e.g., Reports chest pain, shortness of breath, and fatigue for the past 2 weeks..."
                               className="min-h-[100px] pr-10"
                               {...field}
                             />
                             <Button
-                                type="button"
-                                variant={isListening === 'symptoms' ? 'destructive' : 'ghost'}
-                                size="icon"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
-                                onClick={() => handleVoiceInput('symptoms')}
-                              >
-                                <Mic className="h-4 w-4" />
-                              </Button>
+                              type="button"
+                              variant={
+                                isListening === "symptoms"
+                                  ? "destructive"
+                                  : "ghost"
+                              }
+                              size="icon"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
+                              onClick={() => handleVoiceInput("symptoms")}
+                            >
+                              <Mic className="h-4 w-4" />
+                            </Button>
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -261,14 +332,18 @@ export function Dashboard() {
                               {...field}
                             />
                             <Button
-                                type="button"
-                                variant={isListening === 'labResults' ? 'destructive' : 'ghost'}
-                                size="icon"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
-                                onClick={() => handleVoiceInput('labResults')}
-                              >
-                                <Mic className="h-4 w-4" />
-                              </Button>
+                              type="button"
+                              variant={
+                                isListening === "labResults"
+                                  ? "destructive"
+                                  : "ghost"
+                              }
+                              size="icon"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
+                              onClick={() => handleVoiceInput("labResults")}
+                            >
+                              <Mic className="h-4 w-4" />
+                            </Button>
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -289,13 +364,38 @@ export function Dashboard() {
 
         <div className="space-y-8 lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BrainCircuit className="h-5 w-5" /> AI-Powered Analysis
-              </CardTitle>
-              <CardDescription>
-                Disease patterns and anomalies identified by the AI.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BrainCircuit className="h-5 w-5" /> AI-Powered Analysis
+                </CardTitle>
+                <CardDescription>
+                  Disease patterns and anomalies identified by the AI.
+                </CardDescription>
+              </div>
+              {results?.analysis && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    handlePlayAudio(
+                      `Disease Patterns: ${results.analysis.diseasePatterns}. Anomalies: ${results.analysis.anomalies}`,
+                      "analysis"
+                    )
+                  }
+                  disabled={playingAudio?.isLoading}
+                >
+                  {playingAudio?.section === "analysis" &&
+                  !playingAudio?.isLoading ? (
+                    <Pause className="h-5 w-5" />
+                  ) : playingAudio?.section === "analysis" &&
+                    playingAudio?.isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-5 w-5" />
+                  )}
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               {isLoading && !results && (
@@ -331,13 +431,45 @@ export function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Stethoscope className="h-5 w-5" /> Differential Diagnoses
-              </CardTitle>
-              <CardDescription>
-                Potential diagnoses ranked by likelihood.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5" /> Differential Diagnoses
+                </CardTitle>
+                <CardDescription>
+                  Potential diagnoses ranked by likelihood.
+                </CardDescription>
+              </div>
+              {results?.diagnoses && results.diagnoses.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    handlePlayAudio(
+                      results.diagnoses
+                        .map(
+                          (d) =>
+                            `Diagnosis: ${d.diagnosis}. Likelihood: ${(
+                              d.likelihood * 100
+                            ).toFixed(0)}%. Rationale: ${d.rationale}`
+                        )
+                        .join(" \n\n"),
+                      "diagnoses"
+                    )
+                  }
+                  disabled={playingAudio?.isLoading}
+                >
+                  {playingAudio?.section === "diagnoses" &&
+                  !playingAudio?.isLoading ? (
+                    <Pause className="h-5 w-5" />
+                  ) : playingAudio?.section === "diagnoses" &&
+                    playingAudio?.isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-5 w-5" />
+                  )}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {isLoading && !results && (
@@ -363,7 +495,9 @@ export function Dashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[30%]">Diagnosis</TableHead>
-                      <TableHead className="w-[15%] text-center">Likelihood</TableHead>
+                      <TableHead className="w-[15%] text-center">
+                        Likelihood
+                      </TableHead>
                       <TableHead>Rationale</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -415,7 +549,7 @@ export function Dashboard() {
                   </TableBody>
                 </Table>
               )}
-               {isLoading && results && (
+              {isLoading && results && (
                 <div className="space-y-2 pt-4">
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="flex items-center space-x-4">
@@ -433,13 +567,43 @@ export function Dashboard() {
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FlaskConical className="h-5 w-5" /> Recommended Tests
-                </CardTitle>
-                <CardDescription>
-                  Prioritized list of diagnostic tests.
-                </CardDescription>
+              <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FlaskConical className="h-5 w-5" /> Recommended Tests
+                  </CardTitle>
+                  <CardDescription>
+                    Prioritized list of diagnostic tests.
+                  </CardDescription>
+                </div>
+                {results?.tests && results.tests.recommendedTests.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      handlePlayAudio(
+                        results.tests.recommendedTests
+                          .map(
+                            (t) =>
+                              `Test: ${t.testName}. Priority: ${t.priority}. Rationale: ${t.rationale}`
+                          )
+                          .join(" \n\n"),
+                        "tests"
+                      )
+                    }
+                    disabled={playingAudio?.isLoading}
+                  >
+                    {playingAudio?.section === "tests" &&
+                    !playingAudio?.isLoading ? (
+                      <Pause className="h-5 w-5" />
+                    ) : playingAudio?.section === "tests" &&
+                      playingAudio?.isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Volume2 className="h-5 w-5" />
+                    )}
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {isLoading && (
@@ -473,13 +637,38 @@ export function Dashboard() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HeartPulse className="h-5 w-5" /> Treatment Suggestions
-                </CardTitle>
-                <CardDescription>
-                  Potential treatment pathways.
-                </CardDescription>
+              <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <HeartPulse className="h-5 w-5" /> Treatment Suggestions
+                  </CardTitle>
+                  <CardDescription>
+                    Potential treatment pathways.
+                  </CardDescription>
+                </div>
+                 {results?.treatments && results.treatments.treatmentPathways.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      handlePlayAudio(
+                        results.treatments.treatmentPathways.join(" \n\n"),
+                        "treatments"
+                      )
+                    }
+                    disabled={playingAudio?.isLoading}
+                  >
+                    {playingAudio?.section === "treatments" &&
+                    !playingAudio?.isLoading ? (
+                      <Pause className="h-5 w-5" />
+                    ) : playingAudio?.section === "treatments" &&
+                      playingAudio?.isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Volume2 className="h-5 w-5" />
+                    )}
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {isLoading && (
@@ -496,15 +685,13 @@ export function Dashboard() {
                   )}
                 {results?.treatments && (
                   <ul className="list-disc space-y-2 pl-5">
-                    {results.treatments.treatmentPathways.map(
-                      (pathway, i) => (
-                        <li key={i} className="text-sm text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            {pathway}
-                          </span>
-                        </li>
-                      )
-                    )}
+                    {results.treatments.treatmentPathways.map((pathway, i) => (
+                      <li key={i} className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {pathway}
+                        </span>
+                      </li>
+                    ))}
                   </ul>
                 )}
               </CardContent>

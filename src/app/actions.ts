@@ -17,6 +17,7 @@ import {
   suggestPotentialTreatmentPathways,
   type SuggestPotentialTreatmentPathwaysOutput,
 } from "@/ai/flows/suggest-potential-treatment-pathways";
+import { textToSpeech, type TextToSpeechOutput } from "@/ai/flows/tts-flow";
 import { patientDataSchema } from "@/lib/schemas";
 import type { FullAnalysis } from "@/lib/types";
 import type { z } from "zod";
@@ -68,4 +69,8 @@ export async function getAiAnalysis(
     tests,
     treatments,
   };
+}
+
+export async function getTts(text: string): Promise<TextToSpeechOutput> {
+  return await textToSpeech(text);
 }

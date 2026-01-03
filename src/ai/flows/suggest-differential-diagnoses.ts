@@ -12,9 +12,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestDifferentialDiagnosesInputSchema = z.object({
-  medicalHistory: z.string().describe('The patient\'s medical history.'),
-  symptoms: z.string().describe('The patient\'s reported symptoms.'),
-  labResults: z.string().describe('The patient\'s laboratory results.'),
+  medicalHistory: z.string().describe("The patient's medical history."),
+  symptoms: z.string().describe("The patient's reported symptoms."),
+  labResults: z.string().describe("The patient's laboratory results."),
+  question: z.string().optional().describe("A clarifying question about a potential diagnosis."),
 });
 export type SuggestDifferentialDiagnosesInput =
   z.infer<typeof SuggestDifferentialDiagnosesInputSchema>;
@@ -44,7 +45,10 @@ const prompt = ai.definePrompt({
 
   Medical History: {{{medicalHistory}}}
   Symptoms: {{{symptoms}}}
-  Lab Results: {{{labResults}}}
+  LabResults: {{{labResults}}}
+  {{#if question}}
+  When refining your diagnosis, consider the following question: {{{question}}}
+  {{/if}}
 
   Format your response as a JSON array of objects with the following fields:
   - diagnosis: A potential diagnosis.

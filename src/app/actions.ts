@@ -22,13 +22,19 @@ import type { FullAnalysis } from "@/lib/types";
 import type { z } from "zod";
 
 export async function getAiAnalysis(
-  data: z.infer<typeof patientDataSchema>
+  data: z.infer<typeof patientDataSchema>,
+  question?: string
 ): Promise<FullAnalysis> {
   const { medicalHistory, symptoms, labResults } = data;
 
   const [analysis, diagnoses] = await Promise.all([
     analyzePatientDataForPatterns({ medicalHistory, symptoms, labResults }),
-    suggestDifferentialDiagnoses({ medicalHistory, symptoms, labResults }),
+    suggestDifferentialDiagnoses({
+      medicalHistory,
+      symptoms,
+      labResults,
+      question,
+    }),
   ]);
 
   let tests: RecommendRelevantDiagnosticTestsOutput = { recommendedTests: [] };

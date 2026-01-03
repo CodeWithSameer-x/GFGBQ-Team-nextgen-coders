@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { useTransition, useState } from "react";
+import { useTransition, useState, Fragment } from "react";
 
 import { getAiAnalysis } from "@/app/actions";
 import {
@@ -13,6 +13,7 @@ import {
   HeartPulse,
   Loader2,
   Stethoscope,
+  RefreshCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +32,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -50,6 +52,7 @@ type FormData = z.infer<typeof patientDataSchema>;
 export function Dashboard() {
   const [isPending, startTransition] = useTransition();
   const [results, setResults] = useState<FullAnalysis | null>(null);
+  const [questions, setQuestions] = useState<Record<number, string>>({});
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -61,11 +64,11 @@ export function Dashboard() {
     },
   });
 
-  const onSubmit = (data: FormData) => {
+  const handleAnalysis = (data: FormData, question?: string) => {
     startTransition(async () => {
       setResults(null);
       try {
-        const analysisResults = await getAiAnalysis(data);
+        const analysisResults = await getAiAnalysis(data, question);
         setResults(analysisResults);
       } catch (error) {
         console.error("Analysis failed:", error);
@@ -77,6 +80,20 @@ export function Dashboard() {
         });
       }
     });
+  };
+
+  const onSubmit = (data: FormData) => {
+    handleAnalysis(data);
+  };
+
+  const handleQuestionChange = (index: number, value: string) => {
+    setQuestions((prev) => ({ ...prev, [index]: value }));
+  };
+
+  const handleReanalyze = (index: number) => {
+    const formData = form.getValues();
+    const question = questions[index];
+    handleAnalysis(formData, question);
   };
 
   const isLoading = isPending;
@@ -174,7 +191,7 @@ export function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isLoading && (
+              {isLoading && !results && (
                 <div className="space-y-4">
                   <Skeleton className="h-8 w-1/3" />
                   <Skeleton className="h-20 w-full" />
@@ -216,7 +233,7 @@ export function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading && (
+              {isLoading && !results && (
                 <div className="space-y-2">
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="flex items-center space-x-4">
@@ -245,22 +262,64 @@ export function Dashboard() {
                   </TableHeader>
                   <TableBody>
                     {results.diagnoses.map((diag, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium">
-                          {diag.diagnosis}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="secondary" className="font-mono">
-                            {(diag.likelihood * 100).toFixed(0)}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {diag.rationale}
-                        </TableCell>
-                      </TableRow>
+                      <Fragment key={i}>
+                        <TableRow>
+                          <TableCell className="font-medium">
+                            {diag.diagnosis}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary" className="font-mono">
+                              {(diag.likelihood * 100).toFixed(0)}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {diag.rationale}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell colSpan={3}>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                placeholder="Ask a clarifying question..."
+                                value={questions[i] || ""}
+                                onChange={(e) =>
+                                  handleQuestionChange(i, e.target.value)
+                                }
+                                className="h-9"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleReanalyze(i)}
+                                disabled={isPending}
+                              >
+                                {isPending ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RefreshCcw className="mr-2 h-4 w-4" />
+                                )}
+                                Re-analyze
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      </Fragment>
                     ))}
                   </TableBody>
                 </Table>
+              )}
+               {isLoading && results && (
+                <div className="space-y-2 pt-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

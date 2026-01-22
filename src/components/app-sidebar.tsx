@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   MessageSquare,
   PanelLeft,
+  PenSquare,
   Search,
 } from 'lucide-react';
 
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/resources', icon: Search, label: 'Resource Locator' },
   { href: '/summarize', icon: FileText, label: 'Info Summaries' },
   { href: '/recommendations', icon: HeartHandshake, label: 'Recommendations' },
+  { href: '/app-assistant', icon: PenSquare, label: 'App Assistant' },
   { href: '/my-progress', icon: Bookmark, label: 'My Progress' },
   { href: '/feedback', icon: MessageSquare, label: 'Feedback' },
 ];
@@ -71,7 +73,7 @@ export default function AppSidebar() {
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-xs">
+          <SheetContent side="left" className="sm:max-w-xs p-0">
             <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
             <div className="flex h-[60px] items-center border-b px-6">
               <Link href="/" className="flex items-center gap-2 font-headline font-semibold text-xl">

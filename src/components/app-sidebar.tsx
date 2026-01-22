@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 
@@ -71,6 +72,7 @@ export default function AppSidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs">
+            <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
             <div className="flex h-[60px] items-center border-b px-6">
               <Link href="/" className="flex items-center gap-2 font-headline font-semibold text-xl">
                 <LayoutGrid className="h-6 w-6 text-primary" />

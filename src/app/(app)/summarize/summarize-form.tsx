@@ -90,7 +90,7 @@ export default function SummarizeForm() {
             <CardTitle className="font-headline text-2xl">Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-blue max-w-none text-foreground">
+            <div className="prose prose-lg max-w-none rounded-lg bg-muted/30 p-6">
                 <p>{summary}</p>
             </div>
           </CardContent>

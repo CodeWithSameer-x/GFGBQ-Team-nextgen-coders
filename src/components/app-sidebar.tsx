@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
@@ -54,9 +56,9 @@ export default function AppSidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-card sm:flex">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/" className="flex items-center gap-2 font-headline font-semibold text-xl">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-72 flex-col border-r bg-card sm:flex">
+        <div className="flex h-16 items-center border-b px-4 lg:px-6">
+          <Link href="/" className="flex items-center gap-2 font-headline font-bold text-xl">
             <LayoutGrid className="h-6 w-6 text-primary" />
             <span>AccessAlly</span>
           </Link>
@@ -74,13 +76,15 @@ export default function AppSidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0">
-            <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-            <div className="flex h-[60px] items-center border-b px-6">
-              <Link href="/" className="flex items-center gap-2 font-headline font-semibold text-xl">
-                <LayoutGrid className="h-6 w-6 text-primary" />
-                <span>AccessAlly</span>
-              </Link>
-            </div>
+             <SheetHeader className="h-16 flex flex-row items-center border-b px-6">
+                <SheetTitle>
+                  <Link href="/" className="flex items-center gap-2 font-headline font-bold text-xl">
+                    <LayoutGrid className="h-6 w-6 text-primary" />
+                    <span>AccessAlly</span>
+                  </Link>
+                </SheetTitle>
+                 <SheetDescription className="sr-only">Main navigation menu</SheetDescription>
+              </SheetHeader>
             <div className="py-2">
               {navLinks}
             </div>

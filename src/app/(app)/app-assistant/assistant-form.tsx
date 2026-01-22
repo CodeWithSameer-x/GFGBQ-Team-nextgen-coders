@@ -106,7 +106,7 @@ export default function AssistantForm() {
             <CardDescription>You can copy and edit this response before using it in your application.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-blue max-w-none text-foreground whitespace-pre-wrap">
+            <div className="prose prose-lg max-w-none rounded-lg bg-muted/30 p-6 whitespace-pre-wrap">
                 <p>{draft}</p>
             </div>
           </CardContent>

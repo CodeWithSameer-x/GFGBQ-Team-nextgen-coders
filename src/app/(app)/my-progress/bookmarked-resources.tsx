@@ -28,7 +28,7 @@ export default function BookmarkedResources() {
   return (
     <div className="grid gap-6">
       {bookmarks.map((bookmark) => (
-        <Card key={bookmark.id}>
+        <Card key={bookmark.id} className="transition-all hover:shadow-lg hover:-translate-y-1">
           <CardHeader className="flex flex-row items-start justify-between">
             <div>
               <CardTitle className="font-headline text-2xl">{bookmark.name}</CardTitle>

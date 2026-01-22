@@ -112,7 +112,7 @@ export default function ResourceLocator() {
 
       <div className="grid gap-6">
         {resources.map((resource, index) => (
-          <Card key={index} className="transition-all hover:shadow-md">
+          <Card key={index} className="transition-all hover:shadow-lg hover:-translate-y-1">
             <CardHeader>
               <CardTitle className="flex items-start justify-between">
                 <span className="font-headline text-2xl">{resource.name}</span>

@@ -106,7 +106,7 @@ export default function RecommendationsForm() {
             <CardTitle className="font-headline text-2xl">Your Personalized Recommendations</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-blue max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: recommendations.replace(/\n/g, '<br />') }} />
+            <div className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground rounded-lg bg-muted/30 p-6" dangerouslySetInnerHTML={{ __html: recommendations.replace(/\n/g, '<br />') }} />
           </CardContent>
         </Card>
       )}

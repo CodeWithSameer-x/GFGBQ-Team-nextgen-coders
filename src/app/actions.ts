@@ -1,0 +1,75 @@
+
+"use server";
+
+import {
+  analyzePatientDataForPatterns
+} from "@/ai/flows/analyze-patient-data-for-patterns";
+import {
+  recommendRelevantDiagnosticTests,
+} from "@/ai/flows/recommend-relevant-diagnostic-tests";
+import {
+  suggestDifferentialDiagnoses,
+} from "@/ai/flows/suggest-differential-diagnoses";
+import {
+  suggestPotentialTreatmentPathways,
+} from "@/ai/flows/suggest-potential-treatment-pathways";
+import { textToSpeech } from "@/ai/flows/tts-flow";
+import { patientDataSchema } from "@/lib/schemas";
+import type { FullAnalysis } from "@/lib/types";
+import type { z } from "zod";
+import type { AnalyzePatientDataOutput, RecommendRelevantDiagnosticTestsOutput, SuggestDifferentialDiagnosesOutput, SuggestPotentialTreatmentPathwaysOutput, TextToSpeechOutput } from "@/lib/schemas/ai-schemas";
+
+export async function getAiAnalysis(
+  data: z.infer<typeof patientDataSchema>,
+  question?: string
+): Promise<FullAnalysis> {
+  const { medicalHistory, symptoms, labResults, medicalHistoryFile } = data;
+
+  const [analysis, diagnoses] = await Promise.all([
+    analyzePatientDataForPatterns({ medicalHistory, symptoms, labResults, medicalHistoryFile }),
+    suggestDifferentialDiagnoses({
+      medicalHistory,
+      symptoms,
+      labResults,
+      question,
+      medicalHistoryFile,
+    }),
+  ]);
+
+  let tests: RecommendRelevantDiagnosticTestsOutput = { recommendedTests: [] };
+  let treatments: SuggestPotentialTreatmentPathwaysOutput = {
+    treatmentPathways: [],
+  };
+
+  if (diagnoses && diagnoses.length > 0) {
+    const topDiagnosis = diagnoses[0];
+    const potentialConditions = diagnoses.map((d) => d.diagnosis).join(", ");
+
+    const [recommendedTests, suggestedTreatments] = await Promise.all([
+      recommendRelevantDiagnosticTests({
+        medicalHistory,
+        symptoms,
+        labResults,
+        potentialConditions,
+        medicalHistoryFile,
+      }),
+      suggestPotentialTreatmentPathways({
+        diagnosis: topDiagnosis.diagnosis,
+        patientData: JSON.stringify(data),
+      }),
+    ]);
+    tests = recommendedTests;
+    treatments = suggestedTreatments;
+  }
+
+  return {
+    analysis,
+    diagnoses,
+    tests,
+    treatments,
+  };
+}
+
+export async function getTts(text: string): Promise<TextToSpeechOutput> {
+  return await textToSpeech(text);
+}
